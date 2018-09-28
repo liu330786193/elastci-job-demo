@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:reg="http://www.dangdang.com/schema/ddframe/reg"
+       xmlns:job="http://www.dangdang.com/schema/ddframe/job"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.dangdang.com/schema/ddframe/reg http://www.dangdang.com/schema/ddframe/reg/reg.xsd http://www.dangdang.com/schema/ddframe/job http://www.dangdang.com/schema/ddframe/job/job.xsd">
+
+    <!--配置作业注册中心 -->
+    <reg:zookeeper id="regCenter" server-lists="localhost:2181"
+                   namespace="elastic-job"
+                   base-sleep-time-milliseconds="1000"
+                   max-sleep-time-milliseconds="3000"
+                   max-retries="3" />
+
+    <!-- Elastic-Job在数据库中的日志 -->
+    <bean id="elasticJobLog" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/elastic-job?characterEncoding=utf8&amp;useSSL=false"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+    </bean>
+
+    <!-- 第一个Elastic-Job分片定时任务 -->
+    <job:simple id="mySimpleJob" class="com.lyl.demo.elastic.TestSimpleJob" registry-center-ref="regCenter"
+                cron="0/10 * * * * ?"
+                sharding-total-count="3"
+                sharding-item-parameters="0=A,1=B,2=C"
+                description="我的第一个简单作业" overwrite="true" event-trace-rdb-data-source="elasticJobLog"
+                job-exception-handler="com.lyl.demo.elastic.CustomJobExceptionHandler">
+            <job:listener class="com.lyl.demo.elastic.DefaultElasticJobListener" />
+    </job:simple>
+
+    <!-- 第二个Elastic-Job分片定时任务 -->
+    <job:simple id="mySimpleJob1" class="com.lyl.demo.elastic.TestSimpleJob2" registry-center-ref="regCenter"
+                cron="0/10 * * * * ?"
+                sharding-total-count="3"
+                sharding-item-parameters="0=A,1=B,2=C"
+                description="我的第二个简单作业" overwrite="true" event-trace-rdb-data-source="elasticJobLog"
+                job-exception-handler="io.elasticjob.lite.executor.handler.impl.DefaultJobExceptionHandler"/>
+
+
+</beans>
